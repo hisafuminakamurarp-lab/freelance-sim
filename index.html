@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>個人事業主シミュレーション</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg-0:#0f172a; --bg-1:#1e293b; --bg-2:#0b1220;
+    --line:#1e3a5f; --line-soft:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --dim:#64748b; --faint:#475569;
+    --gold:#c9a84c; --cyan:#38bdf8; --green:#4ade80; --amber:#f59e0b;
+    --pink:#f472b6; --red:#f87171; --lime:#a3e635;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);
+    font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN",sans-serif;
+    color:var(--text); padding:20px 16px; line-height:1.6;
+  }
+  .num{font-family:"JetBrains Mono",monospace;font-feature-settings:"tnum";}
+  input,select{
+    background:var(--bg-1);border:1px solid var(--line-soft);color:var(--text);
+    border-radius:8px;padding:9px 12px;font-size:14px;width:100%;outline:none;
+    transition:border-color .2s,box-shadow .2s;font-family:inherit;
+  }
+  input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(56,189,248,.15);}
+  label{font-size:11px;color:var(--muted);margin-bottom:5px;display:block;font-weight:500;letter-spacing:.05em;}
+  .sec{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:12px;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  .wrap{max-width:480px;margin:0 auto;}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;
+    margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(201,168,76,.22);}
+  .head .eyebrow{font-size:10px;letter-spacing:.18em;color:var(--cyan);font-weight:700;margin-bottom:4px;}
+  .head h1{font-size:19px;font-weight:700;margin:0;line-height:1.25;letter-spacing:.02em;}
+  .head .sub{font-size:11px;color:var(--dim);margin-top:3px;}
+  .head .ver{font-size:10px;color:var(--gold);letter-spacing:.08em;text-align:right;opacity:.85;white-space:nowrap;}
+
+  .card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .field{margin-bottom:12px;}
+  .field:last-child{margin-bottom:0;}
+  .hint{font-size:10px;color:var(--dim);margin-top:5px;line-height:1.5;}
+
+  .live{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 6px var(--green);animation:pulse 1.5s ease infinite;display:inline-block;}
+  .live span{font-size:11px;color:var(--green);font-weight:700;letter-spacing:.1em;}
+
+  .hero{background:linear-gradient(135deg,#14532d,#166534);border-radius:18px;padding:22px 20px;
+    text-align:center;margin-bottom:14px;border:1px solid var(--green);box-shadow:0 0 24px rgba(74,222,128,.15);}
+  .hero .lbl{font-size:11px;letter-spacing:.1em;color:rgba(255,255,255,.6);margin-bottom:4px;}
+  .hero .big{font-size:34px;font-weight:700;color:#fff;letter-spacing:.01em;}
+  .hero .bar{margin-top:10px;background:rgba(0,0,0,.25);border-radius:6px;height:6px;overflow:hidden;}
+  .hero .bar i{display:block;height:100%;border-radius:6px;background:rgba(255,255,255,.7);transition:width .35s;}
+  .hero .rate{font-size:11px;color:rgba(255,255,255,.8);margin-top:6px;}
+  .hero.empty{background:linear-gradient(135deg,#1e293b,#0b1220);border-color:var(--line-soft);box-shadow:none;}
+  .hero.empty .placeholder{font-size:13px;color:rgba(255,255,255,.45);padding:14px 0;}
+
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .mini{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;}
+  .mini .l{font-size:10px;color:var(--muted);letter-spacing:.06em;}
+  .mini .v{font-size:20px;font-weight:700;margin-top:4px;}
+
+  .breakdown{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .breakdown h3{font-size:11px;color:var(--cyan);font-weight:700;margin:0 0 10px;letter-spacing:.08em;}
+  .row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid #0f1729;font-size:13px;}
+  .row:last-of-type{border-bottom:none;}
+  .row .k{color:var(--muted);}
+  .row .k small{display:block;color:var(--faint);font-size:10px;font-weight:400;letter-spacing:0;}
+  .row .v{font-weight:700;}
+  .row.total{margin-top:6px;padding-top:10px;border-top:1px solid var(--line-soft);border-bottom:none;font-size:15px;}
+  .row.total .k{color:var(--text);font-weight:700;}
+  .row.total .v{color:var(--pink);}
+  .v-amber{color:var(--amber);} .v-cyan{color:var(--cyan);} .v-red{color:var(--red);}
+  .v-green{color:var(--green);} .v-gold{color:var(--gold);} .v-text{color:var(--text);}
+
+  .nest{padding:5px 0 5px 12px;border-left:2px solid var(--line);margin:2px 0 4px;}
+  .nest .row{font-size:12px;padding:3px 0;border-bottom:none;}
+  .nest .row .k{color:var(--dim);}
+  .nest .row .v{font-weight:500;color:var(--muted);}
+
+  details{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;padding:0 16px;margin-bottom:14px;}
+  details summary{cursor:pointer;padding:14px 0;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:.06em;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"＋ ";color:var(--faint);}
+  details[open] summary::before{content:"− ";}
+  details .body{padding:0 0 16px;font-size:12px;color:var(--muted);line-height:1.85;}
+  details .body b{color:var(--text);font-weight:700;}
+  details .body code{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--cyan);background:rgba(56,189,248,.08);padding:1px 5px;border-radius:4px;}
+  details .body ul{margin:6px 0;padding-left:18px;}
+  details .body li{margin:3px 0;}
+
+  .foot{font-size:10px;color:var(--faint);text-align:center;line-height:1.9;margin-top:6px;}
+
+  @media (min-width:768px){
+    .wrap{max-width:1040px;}
+    .twocol{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;}
+    .head h1{font-size:22px;}
+    .hero .big{font-size:40px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <div class="eyebrow">TAX SIMULATOR</div>
+      <h1>個人事業主シミュレーション</h1>
+      <div class="sub">社会保険料・税金の年間概算</div>
+    </div>
+    <div class="ver">令和8年度<br>（2026年）対応</div>
+  </div>
+
+  <div class="twocol">
+    <!-- 入力 -->
+    <div>
+      <div class="card">
+        <div class="sec">事業情報（年間）</div>
+        <div class="grid2 field">
+          <div>
+            <label>課税売上（年間）</label>
+            <input type="number" id="uri" inputmode="numeric" placeholder="6000000">
+          </div>
+          <div>
+            <label>経費（年間）</label>
+            <input type="number" id="keihi" inputmode="numeric" placeholder="1500000">
+          </div>
+        </div>
+        <div class="grid3 field">
+          <div>
+            <label>青色申告控除</label>
+            <select id="aoiro">
+              <option value="650000">65万（e-Tax）</option>
+              <option value="550000">55万（書面）</option>
+              <option value="100000">10万（簡易）</option>
+              <option value="0">なし（白色）</option>
+            </select>
+          </div>
+          <div>
+            <label>年齢区分</label>
+            <select id="age">
+              <option value="under40">40歳未満</option>
+              <option value="40to64">40〜64歳</option>
+              <option value="over65">65歳以上</option>
+            </select>
+          </div>
+          <div>
+            <label>扶養人数</label>
+            <select id="fuyo">
+              <option value="0">0人</option>
+              <option value="1">1人</option>
+              <option value="2">2人</option>
+              <option value="3">3人</option>
+              <option value="4">4人</option>
+              <option value="5">5人</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint">扶養は一般扶養控除（所得税38万/住民税33万）で概算。特定扶養（19〜22歳）等は実額と差が出ます。</div>
+      </div>
+
+      <div class="card">
+        <div class="sec">国民健康保険の料率</div>
+        <div class="field">
+          <label>自治体プリセット</label>
+          <select id="region">
+            <option value="tokyo23">東京23区（令和8年度・公式料率）</option>
+            <option value="custom">その他（手動入力）</option>
+          </select>
+        </div>
+
+        <div id="tokyoInfo" class="hint" style="margin-top:0;">
+          医療 7.51%＋均等割47,600円／支援金 2.80%＋17,600円／介護(40-64歳) 2.43%＋17,800円／子育て支援金 0.27%＋1,873円。算定基礎額＝総所得−43万円。本人1人加入として計算。
+        </div>
+
+        <div id="customBox" style="display:none;">
+          <div class="hint" style="margin-top:0;margin-bottom:10px;">
+            お住まいの自治体サイトの料率を入力（医療＋支援＋介護を合算した値でOK）。
+          </div>
+          <div class="grid3">
+            <div>
+              <label>所得割率 合計(%)</label>
+              <input type="number" id="cRate" inputmode="decimal" placeholder="12.00" step="0.01">
+            </div>
+            <div>
+              <label>均等割 合計(円/人)</label>
+              <input type="number" id="cKinto" inputmode="numeric" placeholder="65000">
+            </div>
+            <div>
+              <label>賦課限度額(円)</label>
+              <input type="number" id="cCap" inputmode="numeric" placeholder="1090000">
+            </div>
+          </div>
+          <div class="hint">限度額は医療＋支援＋介護の合計上限（東京23区 令和8年度なら約110万円）。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 結果 -->
+    <div>
+      <div class="live"><span class="dot"></span><span>LIVE CALCULATION</span></div>
+
+      <div id="heroEmpty" class="hero empty">
+        <div class="placeholder">課税売上・経費を入力してください</div>
+      </div>
+
+      <div id="results" style="display:none;">
+        <div class="hero">
+          <div class="lbl">年間 手取り（可処分所得）</div>
+          <div class="big num" id="tedori">¥0</div>
+          <div class="bar"><i id="tedoriBar" style="width:0%"></i></div>
+          <div class="rate"><b id="tedoriRate">0%</b> 手取り率（対 利益）</div>
+        </div>
+
+        <div class="summary">
+          <div class="mini">
+            <div class="l">事業所得（課税）</div>
+            <div class="v num v-text" id="jigyo">¥0</div>
+          </div>
+          <div class="mini">
+            <div class="l">負担合計（税＋国保・年金）</div>
+            <div class="v num v-pink" id="burden" style="color:var(--pink)">¥0</div>
+          </div>
+        </div>
+
+        <div class="breakdown">
+          <h3>📋 内訳（年間）</h3>
+          <div class="row">
+            <span class="k">国民健康保険</span>
+            <span class="v num v-cyan" id="kokuho">¥0</span>
+          </div>
+          <div class="nest" id="kokuhoNest">
+            <div class="row"><span class="k">医療分</span><span class="v num" id="kIryo">¥0</span></div>
+            <div class="row"><span class="k">後期高齢者支援金分</span><span class="v num" id="kShien">¥0</span></div>
+            <div class="row" id="kKaigoRow"><span class="k">介護分（40〜64歳）</span><span class="v num" id="kKaigo">¥0</span></div>
+            <div class="row"><span class="k">子ども・子育て支援金分</span><span class="v num" id="kKodomo">¥0</span></div>
+          </div>
+          <div class="row">
+            <span class="k">国民年金<small id="nenkinNote">月17,920円 × 12</small></span>
+            <span class="v num v-cyan" id="nenkin">¥0</span>
+          </div>
+          <div class="row">
+            <span class="k">個人事業税<small>(売上−経費−290万)×5%</small></span>
+            <span class="v num v-red" id="jigyozei">¥0</span>
+          </div>
+          <div class="row">
+            <span class="k">所得税<small>復興特別所得税2.1%込</small></span>
+            <span class="v num v-red" id="shotokuzei">¥0</span>
+          </div>
+          <div class="row">
+            <span class="k">住民税<small id="juminNote">所得割10%＋均等割</small></span>
+            <span class="v num v-red" id="juminzei">¥0</span>
+          </div>
+          <div class="row total">
+            <span class="k">負担合計</span>
+            <span class="v num" id="burdenTotal">¥0</span>
+          </div>
+          <div class="hint" style="text-align:right;margin-top:6px;">月換算 <span class="num" id="monthly">¥0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details>
+    <summary>計算の前提と根拠（令和8年度）</summary>
+    <div class="body">
+      <ul>
+        <li><b>事業所得</b>＝課税売上 − 経費 − 青色申告特別控除。これを合計所得として税を計算。</li>
+        <li><b>国民健康保険</b>：算定基礎額＝(合計所得 − 43万円)。東京23区 令和8年度の公式料率で計算（本人1人加入の前提）。国保は世帯単位のため、加入する家族がいると均等割が人数分増えます。</li>
+        <li><b>国民年金</b>：令和8年度 月17,920円（年215,040円）。65歳以上は0で計算（本来は20〜60歳が納付対象）。</li>
+        <li><b>所得税の基礎控除</b>：令和8年分の改正後の額（合計所得489万円以下=104万円／〜655万円=67万円／〜2,350万円=62万円ほか）を適用。税制は流動的なため概算。</li>
+        <li><b>住民税</b>：基礎控除43万円、所得割10％＋均等割5,000円（森林環境税1,000円含む）。調整控除は簡易計算。低所得帯は非課税判定で0になる場合あり。</li>
+        <li><b>社会保険料控除</b>：国保＋国民年金を所得控除に算入。</li>
+        <li><b>個人事業税</b>：(売上−経費−事業主控除290万円)×5％。<b>青色申告特別控除は適用外</b>。業種により税率3〜5%・非課税のものもあります。</li>
+        <li><b>手取り</b>＝(売上−経費) − 国保 − 国民年金 − 個人事業税 − 所得税 − 住民税。</li>
+      </ul>
+      <p style="margin-top:8px;">数値はいずれも<b>概算</b>です。実際の金額は自治体・業種・各種控除・申告内容により異なります。正確な試算は税理士・自治体窓口でご確認ください。</p>
+    </div>
+  </details>
+
+  <div class="foot">
+    ※本ツールは令和8年度の制度に基づく概算シミュレーションです<br>
+    ※税務・社会保険の最終判断は専門家にご相談ください
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ── 定数（令和8年度） ──
+  var NENKIN_ANNUAL = 215040;        // 国民年金 月17,920円 × 12
+  var KH_KISO = 430000;              // 国保 基礎控除
+  // 東京23区 令和8年度 国保料率
+  var TOKYO = {
+    iryo:   { rate:0.0751, kinto:47600, cap:670000 },
+    shien:  { rate:0.0280, kinto:17600, cap:260000 },
+    kaigo:  { rate:0.0243, kinto:17800, cap:170000 }, // 40〜64歳のみ
+    kodomo: { rate:0.0027, kinto:1873,  cap:30000  }  // 18歳以上1人あたり
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var ids = ["uri","keihi","aoiro","age","fuyo","region","cRate","cKinto","cCap"];
+  ids.forEach(function(id){
+    var el = $(id);
+    el.addEventListener("input", calc);
+    el.addEventListener("change", calc);
+  });
+
+  $("region").addEventListener("change", function(){
+    var custom = $("region").value === "custom";
+    $("customBox").style.display = custom ? "block" : "none";
+    $("tokyoInfo").style.display = custom ? "none" : "block";
+  });
+
+  function yen(n){
+    n = Math.round(n);
+    var sign = n < 0 ? "-" : "";
+    return sign + "¥" + Math.abs(n).toLocaleString("ja-JP");
+  }
+
+  // 所得税 速算表（復興特別所得税2.1%込）
+  function incomeTax(t){
+    var x;
+    if (t <= 1950000)       x = t*0.05;
+    else if (t <= 3300000)  x = t*0.10 - 97500;
+    else if (t <= 6950000)  x = t*0.20 - 427500;
+    else if (t <= 9000000)  x = t*0.23 - 636000;
+    else if (t <= 18000000) x = t*0.33 - 1536000;
+    else if (t <= 40000000) x = t*0.40 - 2796000;
+    else                    x = t*0.45 - 4796000;
+    x = Math.max(0, x);
+    return Math.floor(x * 1.021);
+  }
+
+  // 所得税 基礎控除（令和8年分）
+  function kisoIncome(g){
+    if (g <= 4890000)  return 1040000;
+    if (g <= 6550000)  return 670000;
+    if (g <= 23500000) return 620000;
+    if (g <= 24000000) return 480000;
+    if (g <= 24500000) return 320000;
+    if (g <= 25000000) return 160000;
+    return 0;
+  }
+  // 住民税 基礎控除
+  function kisoJumin(g){
+    if (g <= 24000000) return 430000;
+    if (g <= 24500000) return 290000;
+    if (g <= 25000000) return 150000;
+    return 0;
+  }
+
+  function num(id){
+    var v = parseFloat($(id).value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function calc(){
+    var uri   = num("uri");
+    var keihi = num("keihi");
+    var aoiro = parseFloat($("aoiro").value);
+    var age   = $("age").value;
+    var fuyo  = parseInt($("fuyo").value, 10);
+
+    if (uri <= 0){
+      $("results").style.display = "none";
+      $("heroEmpty").style.display = "block";
+      return;
+    }
+    $("results").style.display = "block";
+    $("heroEmpty").style.display = "none";
+
+    var profit       = Math.max(0, uri - keihi);             // 利益（キャッシュ）
+    var jigyoRaw     = Math.max(0, uri - keihi);             // 個人事業税用（青色控除前）
+    var jigyoIncome  = Math.max(0, uri - keihi - aoiro);     // 事業所得＝合計所得
+    var g            = jigyoIncome;
+
+    // ── 国民健康保険 ──
+    var santei = Math.max(0, g - KH_KISO);
+    var kIryo=0,kShien=0,kKaigo=0,kKodomo=0,kokuho=0;
+    var has40to64 = (age === "40to64");
+
+    if ($("region").value === "custom"){
+      var cRate = num("cRate")/100;
+      var cKinto = num("cKinto");
+      var cCap = num("cCap");
+      kokuho = santei*cRate + cKinto;     // 本人1人
+      if (cCap > 0) kokuho = Math.min(kokuho, cCap);
+      kokuho = Math.round(kokuho);
+      $("kokuhoNest").style.display = "none";
+    } else {
+      $("kokuhoNest").style.display = "block";
+      kIryo  = Math.round(Math.min(santei*TOKYO.iryo.rate  + TOKYO.iryo.kinto,  TOKYO.iryo.cap));
+      kShien = Math.round(Math.min(santei*TOKYO.shien.rate + TOKYO.shien.kinto, TOKYO.shien.cap));
+      kKaigo = has40to64 ? Math.round(Math.min(santei*TOKYO.kaigo.rate + TOKYO.kaigo.kinto, TOKYO.kaigo.cap)) : 0;
+      kKodomo= Math.round(Math.min(santei*TOKYO.kodomo.rate + TOKYO.kodomo.kinto, TOKYO.kodomo.cap));
+      kokuho = kIryo + kShien + kKaigo + kKodomo;
+    }
+
+    // ── 国民年金 ──
+    var nenkin = (age === "over65") ? 0 : NENKIN_ANNUAL;
+
+    // 社会保険料控除
+    var shaho = kokuho + nenkin;
+
+    // ── 所得税 ──
+    var kI = kisoIncome(g);
+    var fuyoI = fuyo * 380000;
+    var taxableI = Math.max(0, g - kI - fuyoI - shaho);
+    taxableI = Math.floor(taxableI/1000)*1000; // 課税所得は千円未満切捨て
+    var shotokuzei = incomeTax(taxableI);
+
+    // ── 住民税 ──
+    var kJ = kisoJumin(g);
+    var fuyoJ = fuyo * 330000;
+    var taxableJ = Math.max(0, g - kJ - fuyoJ - shaho);
+    taxableJ = Math.floor(taxableJ/1000)*1000;
+    // 住民税非課税限度額（簡易）
+    var hikazei = 350000*(1+fuyo) + 100000 + (fuyo>0 ? 210000 : 0);
+    var juminzei;
+    if (g <= hikazei){
+      juminzei = 0;
+    } else {
+      // 調整控除（簡易）：人的控除差 = 基礎5万 + 扶養5万/人
+      var jinteki = 50000 + fuyo*50000;
+      var chosei;
+      if (taxableJ <= 2000000){
+        chosei = Math.floor(Math.min(jinteki, taxableJ) * 0.05);
+      } else {
+        chosei = Math.max(2500, Math.floor((jinteki - (taxableJ - 2000000)) * 0.05));
+      }
+      var shotokuwari = Math.max(0, Math.floor(taxableJ * 0.10) - chosei);
+      var kintowari = 5000; // 区市町村3,500＋都道府県1,500（森林環境税1,000含む概算）
+      juminzei = shotokuwari + kintowari;
+    }
+
+    // ── 個人事業税 ──
+    var jigyozei = jigyoRaw > 2900000 ? Math.floor((jigyoRaw - 2900000) * 0.05) : 0;
+
+    // ── 合計・手取り ──
+    var burden = kokuho + nenkin + jigyozei + shotokuzei + juminzei;
+    var tedori = profit - burden;
+    var rate = profit > 0 ? (tedori / profit * 100) : 0;
+
+    // ── 描画 ──
+    $("tedori").textContent = yen(tedori);
+    $("tedoriBar").style.width = Math.max(0, Math.min(100, rate)) + "%";
+    $("tedoriRate").textContent = rate.toFixed(1) + "%";
+    $("jigyo").textContent = yen(jigyoIncome);
+    $("burden").textContent = yen(burden);
+
+    $("kokuho").textContent = yen(kokuho);
+    $("kIryo").textContent = yen(kIryo);
+    $("kShien").textContent = yen(kShien);
+    $("kKaigo").textContent = yen(kKaigo);
+    $("kKodomo").textContent = yen(kKodomo);
+    $("kKaigoRow").style.opacity = has40to64 ? "1" : "0.4";
+
+    $("nenkin").textContent = yen(nenkin);
+    $("nenkinNote").textContent = (age === "over65") ? "65歳以上は対象外" : "月17,920円 × 12";
+
+    $("jigyozei").textContent = yen(jigyozei);
+    $("shotokuzei").textContent = yen(shotokuzei);
+    $("juminzei").textContent = yen(juminzei);
+    $("juminNote").textContent = (g <= hikazei) ? "非課税限度額以下" : "所得割10%＋均等割";
+
+    $("burdenTotal").textContent = yen(burden);
+    $("monthly").textContent = yen(burden/12);
+  }
+
+  calc();
+})();
+</script>
+</body>
+</html>
